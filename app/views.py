@@ -3,7 +3,7 @@ from flask_appbuilder import ModelView
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 
 from .extensions import appbuilder
-from .models import Cliente, Producto
+from .models import Categoria, Cliente, Producto
 
 
 class ClienteView(ModelView):
@@ -42,16 +42,44 @@ class ProductoView(ModelView):
     label_columns = {
         "nombre": "Nombre",
         "descripcion": "Descripción",
+        "categoria": "Categoría",
         "precio_venta": "Precio de venta (Bs)",
         "activo": "Activo",
     }
 
-    list_columns = ["nombre", "precio_venta", "activo"]
-    show_columns = ["id", "nombre", "descripcion", "precio_venta", "activo"]
-    add_columns = ["nombre", "descripcion", "precio_venta", "activo"]
+    list_columns = ["nombre", "categoria", "precio_venta", "activo"]
+    show_columns = [
+        "id",
+        "nombre",
+        "categoria",
+        "descripcion",
+        "precio_venta",
+        "activo",
+    ]
+    add_columns = ["nombre", "categoria", "descripcion", "precio_venta", "activo"]
     edit_columns = add_columns
-    search_columns = ["nombre", "precio_venta", "activo"]
+    search_columns = ["nombre", "categoria", "precio_venta", "activo"]
     order_columns = ["nombre", "precio_venta"]
+
+
+class CategoriaView(ModelView):
+    datamodel = SQLAInterface(Categoria)
+    # Muestra los productos de la categoría al ver su detalle
+    related_views = [ProductoView]
+
+    label_columns = {
+        "nombre": "Nombre",
+        "descripcion": "Descripción",
+        "activo": "Activo",
+        "productos": "Productos",
+    }
+
+    list_columns = ["nombre", "descripcion", "activo"]
+    show_columns = ["id", "nombre", "descripcion", "activo"]
+    add_columns = ["nombre", "descripcion", "activo"]
+    edit_columns = add_columns
+    search_columns = ["nombre", "activo"]
+    order_columns = ["nombre"]
 
 
 appbuilder.add_view(
@@ -62,11 +90,17 @@ appbuilder.add_view(
     category_icon="fa-shopping-cart",
 )
 appbuilder.add_view(
+    CategoriaView,
+    "Categorías",
+    icon="fa-tags",
+    category="Inventario",
+    category_icon="fa-archive",
+)
+appbuilder.add_view(
     ProductoView,
     "Productos",
     icon="fa-coffee",
     category="Inventario",
-    category_icon="fa-archive",
 )
 
 
