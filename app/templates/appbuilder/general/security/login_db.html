@@ -1,0 +1,56 @@
+{% extends "appbuilder/base.html" %}
+
+{% block head_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/loader.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="login-page">
+    <form class="form" action="" method="post" name="login">
+        {{ form.hidden_tag() }}
+        <p class="form-title">{{ title }}</p>
+
+        <div class="input-container">
+            {{ form.username(placeholder=_("Username"), autofocus=true) }}
+            <span><i class="fa fa-user"></i></span>
+        </div>
+        {% for error in form.errors.get('username', []) %}
+        <div class="field-error">{{ error }}</div>
+        {% endfor %}
+
+        <div class="input-container">
+            {{ form.password(placeholder=_("Password")) }}
+            <span><i class="fa fa-key"></i></span>
+        </div>
+        {% for error in form.errors.get('password', []) %}
+        <div class="field-error">{{ error }}</div>
+        {% endfor %}
+
+        <input class="submit" type="submit" value="{{ _('Sign In') }}">
+
+        {% if appbuilder.sm.auth_user_registration %}
+        <p class="signup-link">
+            <a href="{{ appbuilder.sm.get_url_for_registeruser }}">{{ _('Register') }}</a>
+        </p>
+        {% endif %}
+    </form>
+</div>
+
+<div class="loader-overlay" id="loginLoader">
+    <div class="loader">
+        <div class="smoke one"></div>
+        <div class="smoke two"></div>
+        <div class="smoke three"></div>
+        <div class="cup"><div class="cup-handle"></div></div>
+        <div class="load">Cargando...</div>
+    </div>
+</div>
+
+<script>
+    document.querySelector('form[name="login"]').addEventListener('submit', function () {
+        document.getElementById('loginLoader').classList.add('active');
+    });
+</script>
+{% endblock %}
