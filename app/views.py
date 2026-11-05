@@ -3,7 +3,7 @@ from flask_appbuilder import ModelView
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 
 from .extensions import appbuilder
-from .models import Categoria, Cliente, Producto
+from .models import Categoria, Cliente, Ingrediente, Producto, Receta
 
 
 class ClienteView(ModelView):
@@ -36,28 +36,92 @@ class ClienteView(ModelView):
     order_columns = ["nombre", "apellido", "fecha_registro"]
 
 
+class RecetaView(ModelView):
+    datamodel = SQLAInterface(Receta)
+
+    label_columns = {
+        "producto": "Producto",
+        "ingrediente": "Ingrediente",
+        "cantidad": "Cantidad",
+        "subtotal": "Costo (Bs)",
+    }
+
+    list_columns = ["producto", "ingrediente", "cantidad", "subtotal"]
+    show_columns = ["id", "producto", "ingrediente", "cantidad", "subtotal"]
+    add_columns = ["producto", "ingrediente", "cantidad"]
+    edit_columns = add_columns
+    search_columns = ["producto", "ingrediente"]
+    order_columns = ["cantidad"]
+
+
+class IngredienteView(ModelView):
+    datamodel = SQLAInterface(Ingrediente)
+    # Muestra en qué productos se usa el ingrediente
+    related_views = [RecetaView]
+
+    label_columns = {
+        "nombre": "Nombre",
+        "unidad_medida": "Unidad de medida",
+        "costo_unitario": "Costo por unidad (Bs)",
+        "activo": "Activo",
+    }
+
+    list_columns = ["nombre", "unidad_medida", "costo_unitario", "activo"]
+    show_columns = ["id", "nombre", "unidad_medida", "costo_unitario", "activo"]
+    add_columns = ["nombre", "unidad_medida", "costo_unitario", "activo"]
+    edit_columns = add_columns
+    search_columns = ["nombre", "unidad_medida", "activo"]
+    order_columns = ["nombre", "costo_unitario"]
+
+
 class ProductoView(ModelView):
     datamodel = SQLAInterface(Producto)
+    # En el detalle del producto se ve y se arma su receta
+    related_views = [RecetaView]
 
     label_columns = {
         "nombre": "Nombre",
         "descripcion": "Descripción",
         "categoria": "Categoría",
         "precio_venta": "Precio de venta (Bs)",
+        "margen_ganancia": "Ganancia (%)",
+        "costo": "Costo (Bs)",
+        "precio_sugerido": "Precio sugerido (Bs)",
         "activo": "Activo",
     }
 
-    list_columns = ["nombre", "categoria", "precio_venta", "activo"]
+    list_columns = [
+        "nombre",
+        "categoria",
+        "costo",
+        "precio_sugerido",
+        "precio_venta",
+        "activo",
+    ]
     show_columns = [
         "id",
         "nombre",
         "categoria",
         "descripcion",
+        "costo",
+        "margen_ganancia",
+        "precio_sugerido",
         "precio_venta",
         "activo",
     ]
-    add_columns = ["nombre", "categoria", "descripcion", "precio_venta", "activo"]
+    add_columns = [
+        "nombre",
+        "categoria",
+        "descripcion",
+        "margen_ganancia",
+        "precio_venta",
+        "activo",
+    ]
     edit_columns = add_columns
+    description_columns = {
+        "margen_ganancia": "Porcentaje que se suma al costo de la receta "
+        "para calcular el precio sugerido.",
+    }
     search_columns = ["nombre", "categoria", "precio_venta", "activo"]
     order_columns = ["nombre", "precio_venta"]
 
@@ -100,6 +164,18 @@ appbuilder.add_view(
     ProductoView,
     "Productos",
     icon="fa-coffee",
+    category="Inventario",
+)
+appbuilder.add_view(
+    IngredienteView,
+    "Ingredientes",
+    icon="fa-cubes",
+    category="Inventario",
+)
+appbuilder.add_view(
+    RecetaView,
+    "Recetas y costos",
+    icon="fa-list-alt",
     category="Inventario",
 )
 
