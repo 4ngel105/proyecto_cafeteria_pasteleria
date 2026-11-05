@@ -1,39 +1,18 @@
 from flask import current_app, render_template
 from flask_appbuilder import ModelView
 from flask_appbuilder.models.sqla.interface import SQLAInterface
+from wtforms.validators import NumberRange
 
 from .extensions import appbuilder
-from .models import Categoria, Cliente, Ingrediente, Producto, Receta
-
-
-class ClienteView(ModelView):
-    datamodel = SQLAInterface(Cliente)
-
-    label_columns = {
-        "nombre": "Nombre",
-        "apellido": "Apellido",
-        "ci_nit": "CI / NIT",
-        "telefono": "Teléfono",
-        "email": "Correo",
-        "fecha_registro": "Fecha de registro",
-        "activo": "Activo",
-    }
-
-    list_columns = ["nombre", "apellido", "ci_nit", "telefono", "activo"]
-    show_columns = [
-        "id",
-        "nombre",
-        "apellido",
-        "ci_nit",
-        "telefono",
-        "email",
-        "fecha_registro",
-        "activo",
-    ]
-    add_columns = ["nombre", "apellido", "ci_nit", "telefono", "email", "activo"]
-    edit_columns = add_columns
-    search_columns = ["nombre", "apellido", "ci_nit"]
-    order_columns = ["nombre", "apellido", "fecha_registro"]
+from .models import (
+    Categoria,
+    Cliente,
+    DetalleVenta,
+    Ingrediente,
+    Producto,
+    Receta,
+    Venta,
+)
 
 
 class RecetaView(ModelView):
@@ -146,12 +125,115 @@ class CategoriaView(ModelView):
     order_columns = ["nombre"]
 
 
+class DetalleVentaView(ModelView):
+    datamodel = SQLAInterface(DetalleVenta)
+
+    label_columns = {
+        "venta": "Venta",
+        "producto": "Producto",
+        "cantidad": "Cantidad",
+        "precio_unitario": "Precio unitario (Bs)",
+        "subtotal": "Subtotal (Bs)",
+    }
+
+    list_columns = ["venta", "producto", "cantidad", "precio_unitario", "subtotal"]
+    show_columns = [
+        "id",
+        "venta",
+        "producto",
+        "cantidad",
+        "precio_unitario",
+        "subtotal",
+    ]
+    # El precio no se pide al agregar: se toma del producto
+    add_columns = ["venta", "producto", "cantidad"]
+    # Al editar sí se puede cambiar (por ejemplo, para un descuento)
+    edit_columns = ["venta", "producto", "cantidad", "precio_unitario"]
+    search_columns = ["venta", "producto"]
+    order_columns = ["cantidad", "precio_unitario"]
+    validators_columns = {
+        "cantidad": [NumberRange(min=1, message="La cantidad debe ser al menos 1")],
+    }
+
+    def pre_add(self, item):
+        item.precio_unitario = item.producto.precio_venta
+
+
+class VentaView(ModelView):
+    datamodel = SQLAInterface(Venta)
+    # En el detalle de la venta se ven y se agregan sus productos
+    related_views = [DetalleVentaView]
+
+    label_columns = {
+        "id": "N°",
+        "fecha": "Fecha",
+        "cliente": "Cliente",
+        "metodo_pago": "Método de pago",
+        "total": "Total (Bs)",
+    }
+
+    list_columns = ["id", "fecha", "cliente", "metodo_pago", "total"]
+    show_columns = ["id", "fecha", "cliente", "metodo_pago", "total"]
+    add_columns = ["cliente", "metodo_pago"]
+    edit_columns = ["fecha", "cliente", "metodo_pago"]
+    search_columns = ["fecha", "cliente", "metodo_pago"]
+    order_columns = ["id", "fecha"]
+    base_order = ("fecha", "desc")
+    description_columns = {
+        "cliente": "Déjalo vacío si es una venta sin cliente registrado.",
+    }
+
+
+class ClienteView(ModelView):
+    datamodel = SQLAInterface(Cliente)
+    # En el detalle del cliente se ven sus compras
+    related_views = [VentaView]
+
+    label_columns = {
+        "nombre": "Nombre",
+        "apellido": "Apellido",
+        "ci_nit": "CI / NIT",
+        "telefono": "Teléfono",
+        "email": "Correo",
+        "fecha_registro": "Fecha de registro",
+        "activo": "Activo",
+    }
+
+    list_columns = ["nombre", "apellido", "ci_nit", "telefono", "activo"]
+    show_columns = [
+        "id",
+        "nombre",
+        "apellido",
+        "ci_nit",
+        "telefono",
+        "email",
+        "fecha_registro",
+        "activo",
+    ]
+    add_columns = ["nombre", "apellido", "ci_nit", "telefono", "email", "activo"]
+    edit_columns = add_columns
+    search_columns = ["nombre", "apellido", "ci_nit"]
+    order_columns = ["nombre", "apellido", "fecha_registro"]
+
+
+appbuilder.add_view(
+    VentaView,
+    "Ventas",
+    icon="fa-money",
+    category="Ventas",
+    category_icon="fa-shopping-cart",
+)
+appbuilder.add_view(
+    DetalleVentaView,
+    "Detalle de ventas",
+    icon="fa-list",
+    category="Ventas",
+)
 appbuilder.add_view(
     ClienteView,
     "Clientes",
     icon="fa-users",
     category="Ventas",
-    category_icon="fa-shopping-cart",
 )
 appbuilder.add_view(
     CategoriaView,
