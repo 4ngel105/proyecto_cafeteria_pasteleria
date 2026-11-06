@@ -87,16 +87,32 @@ class Ingrediente(Model):
 
     id = Column(Integer, primary_key=True)
     nombre = Column(String(100), unique=True, nullable=False)
-    # Unidad en la que se compra y se mide: kg, g, l, ml, unidad...
-    unidad_medida = Column(String(20), nullable=False)
-    # Cuánto cuesta una unidad de medida (ej: 1 kg de café)
-    costo_unitario = Column(Numeric(10, 2), default=0, nullable=False)
+    # Cómo se compra: lata, bolsa, caja, botella...
+    presentacion = Column(String(50), nullable=True)
+    # Cuánto trae la presentación, en la unidad de medida (ej: 200 g)
+    contenido = Column(Numeric(10, 3), default=1, nullable=False)
+    # Unidad en la que se usa en las recetas
+    unidad_medida = Column(
+        Enum("g", "kg", "ml", "l", "unidad", name="unidad_medida"),
+        default="g",
+        nullable=False,
+    )
+    # Lo que cuesta la presentación completa (ej: la lata a 30 Bs)
+    precio_compra = Column(Numeric(10, 2), default=0, nullable=False)
     activo = Column(Boolean, default=True)
 
     recetas = relationship("Receta", back_populates="ingrediente")
 
     def __repr__(self):
         return f"{self.nombre} ({self.unidad_medida})"
+
+    def costo_unitario(self):
+        """Costo de 1 unidad de medida: precio de compra / contenido."""
+        contenido = Decimal(self.contenido or 0)
+        if contenido <= 0:
+            return Decimal("0")
+        costo = Decimal(self.precio_compra or 0) / contenido
+        return costo.quantize(Decimal("0.0001"))
 
 
 class Receta(Model):
@@ -122,7 +138,7 @@ class Receta(Model):
 
     def subtotal(self):
         """Costo de este ingrediente dentro del producto."""
-        costo = Decimal(self.ingrediente.costo_unitario or 0)
+        costo = self.ingrediente.costo_unitario()
         return (Decimal(self.cantidad or 0) * costo).quantize(Decimal("0.01"))
 
 

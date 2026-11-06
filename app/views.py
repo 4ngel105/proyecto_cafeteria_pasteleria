@@ -1,5 +1,6 @@
-from flask import current_app, render_template
+from flask import current_app, redirect, render_template, url_for
 from flask_appbuilder import ModelView
+from flask_appbuilder.actions import action
 from flask_appbuilder.models.sqla.interface import SQLAInterface
 from wtforms.validators import NumberRange
 
@@ -13,10 +14,13 @@ from .models import (
     Receta,
     Venta,
 )
+from .pantallas import NuevaVentaView, RecetaFormView
 
 
 class RecetaView(ModelView):
     datamodel = SQLAInterface(Receta)
+    # Solo lectura: la receta se arma desde la pantalla "Recetas y costos"
+    base_permissions = ["can_list", "can_show"]
 
     label_columns = {
         "producto": "Producto",
@@ -40,17 +44,45 @@ class IngredienteView(ModelView):
 
     label_columns = {
         "nombre": "Nombre",
-        "unidad_medida": "Unidad de medida",
+        "presentacion": "Presentación",
+        "contenido": "Contenido",
+        "unidad_medida": "Unidad",
+        "precio_compra": "Precio de compra (Bs)",
         "costo_unitario": "Costo por unidad (Bs)",
         "activo": "Activo",
     }
 
-    list_columns = ["nombre", "unidad_medida", "costo_unitario", "activo"]
-    show_columns = ["id", "nombre", "unidad_medida", "costo_unitario", "activo"]
-    add_columns = ["nombre", "unidad_medida", "costo_unitario", "activo"]
+    list_columns = [
+        "nombre",
+        "presentacion",
+        "contenido",
+        "unidad_medida",
+        "precio_compra",
+        "costo_unitario",
+        "activo",
+    ]
+    show_columns = ["id"] + list_columns
+    add_columns = [
+        "nombre",
+        "presentacion",
+        "contenido",
+        "unidad_medida",
+        "precio_compra",
+        "activo",
+    ]
     edit_columns = add_columns
-    search_columns = ["nombre", "unidad_medida", "activo"]
-    order_columns = ["nombre", "costo_unitario"]
+    search_columns = ["nombre", "presentacion", "unidad_medida", "activo"]
+    order_columns = ["nombre", "precio_compra"]
+    description_columns = {
+        "presentacion": "Cómo lo compras. Ej: Lata, Bolsa, Caja.",
+        "contenido": "Cuánto trae, en la unidad elegida. Ej: 200 (si la lata trae 200 g).",
+        "unidad_medida": "La unidad que usarás en las recetas. Ej: g.",
+        "precio_compra": "Lo que pagas por la presentación completa. Ej: 30.",
+    }
+    validators_columns = {
+        "contenido": [NumberRange(min=0.001, message="El contenido debe ser mayor a 0")],
+        "precio_compra": [NumberRange(min=0, message="El precio no puede ser negativo")],
+    }
 
 
 class ProductoView(ModelView):
@@ -104,6 +136,18 @@ class ProductoView(ModelView):
     search_columns = ["nombre", "categoria", "precio_venta", "activo"]
     order_columns = ["nombre", "precio_venta"]
 
+    @action(
+        "armar_receta",
+        "Armar receta",
+        icon="fa-list-alt",
+        multiple=False,
+        single=True,
+    )
+    def armar_receta(self, items):
+        # Desde el detalle llega una lista con un solo producto
+        item = items[0] if isinstance(items, list) else items
+        return redirect(url_for("RecetaFormView.editar", pk=item.id))
+
 
 class CategoriaView(ModelView):
     datamodel = SQLAInterface(Categoria)
@@ -127,6 +171,9 @@ class CategoriaView(ModelView):
 
 class DetalleVentaView(ModelView):
     datamodel = SQLAInterface(DetalleVenta)
+    # Los productos de una venta se cargan desde "Nueva venta"; aquí solo se
+    # consultan, y se puede corregir una línea (por ejemplo, un descuento)
+    base_permissions = ["can_list", "can_show", "can_edit", "can_delete"]
 
     label_columns = {
         "venta": "Venta",
@@ -145,23 +192,19 @@ class DetalleVentaView(ModelView):
         "precio_unitario",
         "subtotal",
     ]
-    # El precio no se pide al agregar: se toma del producto
-    add_columns = ["venta", "producto", "cantidad"]
-    # Al editar sí se puede cambiar (por ejemplo, para un descuento)
-    edit_columns = ["venta", "producto", "cantidad", "precio_unitario"]
+    edit_columns = ["producto", "cantidad", "precio_unitario"]
     search_columns = ["venta", "producto"]
     order_columns = ["cantidad", "precio_unitario"]
     validators_columns = {
         "cantidad": [NumberRange(min=1, message="La cantidad debe ser al menos 1")],
     }
 
-    def pre_add(self, item):
-        item.precio_unitario = item.producto.precio_venta
-
 
 class VentaView(ModelView):
     datamodel = SQLAInterface(Venta)
-    # En el detalle de la venta se ven y se agregan sus productos
+    # Las ventas nuevas se registran desde "Nueva venta"
+    base_permissions = ["can_list", "can_show", "can_edit", "can_delete"]
+    # En el detalle de la venta se ven sus productos
     related_views = [DetalleVentaView]
 
     label_columns = {
@@ -174,7 +217,6 @@ class VentaView(ModelView):
 
     list_columns = ["id", "fecha", "cliente", "metodo_pago", "total"]
     show_columns = ["id", "fecha", "cliente", "metodo_pago", "total"]
-    add_columns = ["cliente", "metodo_pago"]
     edit_columns = ["fecha", "cliente", "metodo_pago"]
     search_columns = ["fecha", "cliente", "metodo_pago"]
     order_columns = ["id", "fecha"]
@@ -217,16 +259,16 @@ class ClienteView(ModelView):
 
 
 appbuilder.add_view(
-    VentaView,
-    "Ventas",
-    icon="fa-money",
+    NuevaVentaView,
+    "Nueva venta",
+    icon="fa-cart-plus",
     category="Ventas",
     category_icon="fa-shopping-cart",
 )
 appbuilder.add_view(
-    DetalleVentaView,
-    "Detalle de ventas",
-    icon="fa-list",
+    VentaView,
+    "Historial de ventas",
+    icon="fa-money",
     category="Ventas",
 )
 appbuilder.add_view(
@@ -255,11 +297,14 @@ appbuilder.add_view(
     category="Inventario",
 )
 appbuilder.add_view(
-    RecetaView,
+    RecetaFormView,
     "Recetas y costos",
     icon="fa-list-alt",
     category="Inventario",
 )
+# Sin menú: solo se ven dentro del detalle de producto / venta
+appbuilder.add_view_no_menu(RecetaView)
+appbuilder.add_view_no_menu(DetalleVentaView)
 
 
 """
