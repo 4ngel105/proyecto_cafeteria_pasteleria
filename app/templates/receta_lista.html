@@ -1,0 +1,61 @@
+{% extends "appbuilder/base.html" %}
+
+{% block content %}
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h4 class="panel-title"><i class="fa fa-list-alt"></i> Recetas y costos</h4>
+  </div>
+  <div class="panel-body">
+    <p class="text-muted">
+      Elige un producto para armar su receta. El costo se calcula con el
+      precio de compra de cada ingrediente.
+    </p>
+    {% if productos %}
+    <div class="table-responsive">
+      <table class="table table-hover table-bordered">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th class="text-center">Ingredientes</th>
+            <th class="text-right">Costo (Bs)</th>
+            <th class="text-right">Ganancia</th>
+            <th class="text-right">Precio sugerido (Bs)</th>
+            <th class="text-right">Precio de venta (Bs)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in productos %}
+          <tr>
+            <td>{{ p.nombre }}</td>
+            <td>{{ p.categoria }}</td>
+            <td class="text-center">{{ p.receta | length }}</td>
+            <td class="text-right">{{ p.costo() }}</td>
+            <td class="text-right">{{ p.margen_ganancia }} %</td>
+            <td class="text-right">{{ p.precio_sugerido() }}</td>
+            <td class="text-right {% if p.precio_venta < p.costo() %}danger{% endif %}">
+              {{ p.precio_venta }}
+              {% if p.precio_venta < p.costo() %}
+                <i class="fa fa-exclamation-triangle text-danger" title="Se vende por debajo del costo"></i>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <a class="btn btn-sm btn-primary" href="{{ url_for('RecetaFormView.editar', pk=p.id) }}">
+                <i class="fa fa-pencil"></i> Armar receta
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+      Todavía no hay productos.
+      <a href="{{ url_for('ProductoView.add') }}">Crea el primero</a>.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
