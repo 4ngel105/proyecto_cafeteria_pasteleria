@@ -16,6 +16,11 @@ from .models import (
     Venta,
 )
 from .pantallas import AsistenteIAView, NuevaVentaView, RecetaFormView
+from .reportes import (
+    ReporteGananciaView,
+    ReporteProductosView,
+    ReporteVentasView,
+)
 
 
 def si_no(valor):
@@ -341,6 +346,25 @@ appbuilder.add_view(
     "Recetas y costos",
     icon="fa-list-alt",
     category="Inventario",
+)
+appbuilder.add_view(
+    ReporteVentasView,
+    "Ventas por período",
+    icon="fa-calendar",
+    category="Reportes",
+    category_icon="fa-bar-chart",
+)
+appbuilder.add_view(
+    ReporteProductosView,
+    "Productos más vendidos",
+    icon="fa-trophy",
+    category="Reportes",
+)
+appbuilder.add_view(
+    ReporteGananciaView,
+    "Ganancia por producto",
+    icon="fa-line-chart",
+    category="Reportes",
 )
 appbuilder.add_view(
     AsistenteIAView,

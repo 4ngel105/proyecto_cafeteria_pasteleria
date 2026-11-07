@@ -260,3 +260,93 @@ a:hover, a:focus { color: var(--cafe-hover); }
   white-space: pre-wrap;
   font-size: 13px;
 }
+
+/* ---------- Nueva venta: pasos y cliente ---------- */
+.paso {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--cafe-oscuro);
+}
+.paso:first-of-type { margin-top: 4px; }
+.paso span {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--cafe);
+  color: #fff;
+  font-size: 13px;
+}
+.modo-cliente { margin-bottom: 12px; }
+.caja-cliente {
+  background: var(--crema);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 14px 16px 4px;
+  margin-bottom: 8px;
+}
+.caja-cliente .ayuda { margin: 0 0 10px; }
+.resultados { margin: 8px 0 10px; }
+.resultados .list-group-item { border-color: var(--borde); }
+.resultados .list-group-item:hover { background: var(--superficie); color: var(--cafe-oscuro); }
+.cliente-elegido {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--superficie);
+  border: 1px solid var(--cafe-claro);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.cliente-elegido .fa { color: var(--cafe); }
+.cliente-elegido .btn-link { margin-left: auto; }
+
+/* ---------- Reportes ---------- */
+.filtros .panel-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+}
+.filtros .form-group { margin-bottom: 0; }
+.barra {
+  position: relative;
+  height: 22px;
+  background: var(--crema);
+  border-radius: 4px;
+  min-width: 80px;
+}
+.barra span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--cafe-claro);
+  border-radius: 4px;
+}
+.barra em {
+  position: relative;
+  padding-left: 8px;
+  line-height: 22px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+}
+.indicador-valor.negativo { color: #a12a1f; }
+.solo-impresion { display: none; }
+
+@media print {
+  .navbar, .no-imprimir, footer, .loader-overlay { display: none !important; }
+  .solo-impresion { display: inline; }
+  body { background: #fff; }
+  .panel, .indicador { box-shadow: none; break-inside: avoid; }
+  .barra span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* Botón de quitar fila (papelera) en rojo */
+.btn-link.quitar, .btn-link.quitar:hover { color: #a12a1f; }
