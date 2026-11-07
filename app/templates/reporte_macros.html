@@ -1,0 +1,51 @@
+{# Partes comunes de los reportes #}
+
+{% macro encabezado(titulo, icono, descripcion, desde, hasta) %}
+<div class="inicio-encabezado">
+  <div>
+    <h2><i class="fa {{ icono }}"></i> {{ titulo }}</h2>
+    <p class="texto-sec">{{ descripcion }}
+      <span class="solo-impresion">· Del {{ desde.strftime("%d/%m/%Y") }} al {{ hasta.strftime("%d/%m/%Y") }}</span>
+    </p>
+  </div>
+  <button type="button" class="btn btn-default no-imprimir" onclick="window.print()">
+    <i class="fa fa-print"></i> Imprimir
+  </button>
+</div>
+{% endmacro %}
+
+{% macro filtros(desde, hasta) %}
+<form method="get" class="panel panel-default filtros no-imprimir">
+  <div class="panel-body">
+    <div class="form-group">
+      <label for="desde">Desde</label>
+      <input type="date" id="desde" name="desde" class="form-control" value="{{ desde.isoformat() }}">
+    </div>
+    <div class="form-group">
+      <label for="hasta">Hasta</label>
+      <input type="date" id="hasta" name="hasta" class="form-control" value="{{ hasta.isoformat() }}">
+    </div>
+    {{ caller() }}
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary"><i class="fa fa-filter"></i> Filtrar</button>
+      <a href="?" class="btn btn-link">Este mes</a>
+    </div>
+  </div>
+</form>
+{% endmacro %}
+
+{% macro select_categoria(categorias, categoria_id) %}
+<div class="form-group">
+  <label for="categoria">Categoría</label>
+  <select id="categoria" name="categoria" class="form-control">
+    <option value="">Todas</option>
+    {% for c in categorias %}
+    <option value="{{ c.id }}" {% if c.id == categoria_id %}selected{% endif %}>{{ c.nombre }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endmacro %}
+
+{% macro sin_datos() %}
+<div class="panel-body texto-sec"><i class="fa fa-info-circle"></i> No hay ventas con estos filtros.</div>
+{% endmacro %}

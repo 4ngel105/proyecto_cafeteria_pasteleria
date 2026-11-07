@@ -13,35 +13,79 @@
       <a href="{{ url_for('ProductoView.add') }}">Registra uno primero</a>.
     </div>
     {% else %}
-    <form method="post" id="form-venta">
+    <form method="post" id="form-venta" autocomplete="off">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="cliente_modo" id="cliente-modo" value="{{ datos.cliente_modo }}">
+      <input type="hidden" name="cliente_id" id="cliente-id" value="{{ datos.cliente.id if datos.cliente else '' }}">
 
-      <div class="row">
-        <div class="col-sm-6 form-group">
-          <label for="cliente">Cliente</label>
-          <select name="cliente_id" id="cliente" class="form-control">
-            <option value="">Venta sin cliente registrado</option>
-            {% for c in clientes %}
-            <option value="{{ c.id }}" {% if c.id|string == datos.cliente_id|string %}selected{% endif %}>
-              {{ c.nombre }} {{ c.apellido }}{% if c.ci_nit %} — {{ c.ci_nit }}{% endif %}
-            </option>
-            {% endfor %}
-          </select>
-          <p class="help-block">
-            ¿Cliente nuevo? <a href="{{ url_for('ClienteView.add') }}">Regístralo aquí</a>.
+      <!-- ========== 1. Cliente ========== -->
+      <h5 class="paso"><span>1</span> Cliente</h5>
+      <div class="btn-group modo-cliente" role="group">
+        <button type="button" class="btn btn-default" data-modo="buscar"><i class="fa fa-search"></i> Buscar cliente</button>
+        <button type="button" class="btn btn-default" data-modo="nuevo"><i class="fa fa-user-plus"></i> Cliente nuevo</button>
+        <button type="button" class="btn btn-default" data-modo="ninguno"><i class="fa fa-user-times"></i> Sin cliente</button>
+      </div>
+
+      <!-- Buscar un cliente existente -->
+      <div class="caja-cliente" data-panel="buscar">
+        <div id="buscador" {% if datos.cliente %}class="hidden"{% endif %}>
+          <div class="input-group">
+            <span class="input-group-addon"><i class="fa fa-id-card"></i></span>
+            <input type="text" id="buscar-cliente" class="form-control"
+                   placeholder="Escribe el carnet (CI/NIT) o el nombre del cliente...">
+          </div>
+          <div class="list-group resultados" id="resultados"></div>
+          <p class="texto-sec ayuda" id="sin-resultados" hidden>
+            No encontramos a <strong id="texto-buscado"></strong>.
+            <a href="#" id="registrar-encontrado">Registrarlo como cliente nuevo</a>
           </p>
         </div>
-        <div class="col-sm-6 form-group">
-          <label>Método de pago</label><br>
-          {% for m in metodos %}
-          <label class="radio-inline">
-            <input type="radio" name="metodo_pago" value="{{ m }}"
-                   {% if m == datos.metodo_pago %}checked{% endif %}> {{ m }}
-          </label>
-          {% endfor %}
+        <div class="cliente-elegido {% if not datos.cliente %}hidden{% endif %}" id="cliente-elegido">
+          <i class="fa fa-user-circle fa-2x"></i>
+          <div>
+            <strong id="elegido-nombre">{{ datos.cliente.nombre if datos.cliente }}</strong><br>
+            <span class="texto-sec" id="elegido-datos">
+              {% if datos.cliente %}CI/NIT: {{ datos.cliente.ci_nit or "—" }}{% if datos.cliente.telefono %} · Tel: {{ datos.cliente.telefono }}{% endif %}{% endif %}
+            </span>
+          </div>
+          <button type="button" class="btn btn-link" id="cambiar-cliente">Cambiar</button>
         </div>
       </div>
 
+      <!-- Registrar un cliente nuevo junto con la venta -->
+      <div class="caja-cliente" data-panel="nuevo">
+        <p class="texto-sec ayuda">El cliente se guardará junto con la venta.</p>
+        <div class="row">
+          <div class="col-sm-4 form-group">
+            <label for="nuevo-ci">CI / NIT</label>
+            <input type="text" name="nuevo_ci_nit" id="nuevo-ci" class="form-control" maxlength="20" value="{{ datos.nuevo.ci_nit }}">
+          </div>
+          <div class="col-sm-4 form-group">
+            <label for="nuevo-nombre">Nombre *</label>
+            <input type="text" name="nuevo_nombre" id="nuevo-nombre" class="form-control" maxlength="100" value="{{ datos.nuevo.nombre }}" data-requerido>
+          </div>
+          <div class="col-sm-4 form-group">
+            <label for="nuevo-apellido">Apellido *</label>
+            <input type="text" name="nuevo_apellido" id="nuevo-apellido" class="form-control" maxlength="100" value="{{ datos.nuevo.apellido }}" data-requerido>
+          </div>
+          <div class="col-sm-4 form-group">
+            <label for="nuevo-telefono">Teléfono</label>
+            <input type="text" name="nuevo_telefono" id="nuevo-telefono" class="form-control" maxlength="20" value="{{ datos.nuevo.telefono }}">
+          </div>
+          <div class="col-sm-8 form-group">
+            <label for="nuevo-email">Correo</label>
+            <input type="email" name="nuevo_email" id="nuevo-email" class="form-control" maxlength="120" value="{{ datos.nuevo.email }}">
+          </div>
+        </div>
+      </div>
+
+      <!-- Venta sin cliente -->
+      <div class="caja-cliente" data-panel="ninguno">
+        <p class="texto-sec ayuda"><i class="fa fa-info-circle"></i> La venta se registrará sin cliente (venta al paso).</p>
+      </div>
+
+      <!-- ========== 2. Productos ========== -->
+      <h5 class="paso"><span>2</span> Productos</h5>
       <table class="table table-bordered" id="tabla-filas">
         <thead>
           <tr>
@@ -73,10 +117,21 @@
         </tfoot>
       </table>
 
+      <!-- ========== 3. Pago ========== -->
+      <h5 class="paso"><span>3</span> Pago</h5>
+      <div class="form-group">
+        {% for m in metodos %}
+        <label class="radio-inline">
+          <input type="radio" name="metodo_pago" value="{{ m }}"
+                 {% if m == datos.metodo_pago %}checked{% endif %}> {{ m }}
+        </label>
+        {% endfor %}
+      </div>
+
       <a href="{{ url_for('VentaView.list') }}" class="btn btn-default">
         <i class="fa fa-list"></i> Ver ventas
       </a>
-      <button type="submit" class="btn btn-success">
+      <button type="submit" class="btn btn-success btn-lg">
         <i class="fa fa-check"></i> Registrar venta
       </button>
     </form>
@@ -119,6 +174,89 @@
 {{ super() }}
 <script nonce="{{ baselib.get_nonce() }}">
 $(function () {
+  // ---------------- Cliente ----------------
+  var URL_BUSCAR = "{{ url_for('NuevaVentaView.buscar_cliente') }}";
+  var $modo = $("#cliente-modo"), $clienteId = $("#cliente-id");
+  var $buscar = $("#buscar-cliente"), $resultados = $("#resultados");
+  var espera = null, ultimos = [];
+
+  function cambiarModo(modo) {
+    $modo.val(modo);
+    $(".modo-cliente .btn").removeClass("active btn-primary").addClass("btn-default");
+    $(".modo-cliente .btn[data-modo='" + modo + "']").addClass("active btn-primary").removeClass("btn-default");
+    $(".caja-cliente").each(function () {
+      var activa = $(this).data("panel") === modo;
+      $(this).toggle(activa);
+      // Los campos ocultos no se envían ni se exigen
+      $(this).find("input").prop("disabled", !activa);
+      $(this).find("[data-requerido]").prop("required", activa);
+    });
+    if (modo === "buscar" && !$clienteId.val()) { $buscar.prop("disabled", false).focus(); }
+    if (modo === "nuevo") { $("#nuevo-ci").focus(); }
+  }
+
+  function elegirCliente(c) {
+    $clienteId.val(c.id);
+    $("#elegido-nombre").text(c.nombre);
+    $("#elegido-datos").text("CI/NIT: " + (c.ci_nit || "—") + (c.telefono ? " · Tel: " + c.telefono : ""));
+    $("#buscador").addClass("hidden");
+    $("#cliente-elegido").removeClass("hidden");
+  }
+
+  function mostrarResultados(lista, texto) {
+    ultimos = lista;
+    $resultados.empty();
+    $("#sin-resultados").prop("hidden", lista.length > 0 || texto.length < 2);
+    $("#texto-buscado").text(texto);
+    lista.forEach(function (c) {
+      var $item = $("<a href='#' class='list-group-item'></a>");
+      $item.append($("<strong></strong>").text(c.nombre));
+      $item.append($("<span class='texto-sec'></span>").text("  CI/NIT: " + (c.ci_nit || "—")));
+      $item.on("click", function (e) { e.preventDefault(); elegirCliente(c); });
+      $resultados.append($item);
+    });
+  }
+
+  $buscar.on("input", function () {
+    var texto = $.trim($buscar.val());
+    clearTimeout(espera);
+    if (texto.length < 2) { mostrarResultados([], texto); return; }
+    espera = setTimeout(function () {
+      $.getJSON(URL_BUSCAR, { q: texto }, function (lista) {
+        if ($.trim($buscar.val()) === texto) { mostrarResultados(lista, texto); }
+      });
+    }, 250);
+  });
+
+  // Enter en el buscador: elige si hay un solo resultado (no envía la venta)
+  $buscar.on("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (ultimos.length === 1) { elegirCliente(ultimos[0]); }
+    }
+  });
+
+  $("#cambiar-cliente").on("click", function () {
+    $clienteId.val("");
+    $("#cliente-elegido").addClass("hidden");
+    $("#buscador").removeClass("hidden");
+    $buscar.val("").focus();
+    mostrarResultados([], "");
+  });
+
+  // "No encontrado" -> pasa a cliente nuevo con el dato ya escrito
+  $("#registrar-encontrado").on("click", function (e) {
+    e.preventDefault();
+    var texto = $.trim($buscar.val());
+    if (/^[0-9\- ]+$/.test(texto)) { $("#nuevo-ci").val(texto); }
+    else { $("#nuevo-nombre").val(texto); }
+    cambiarModo("nuevo");
+  });
+
+  $(".modo-cliente .btn").on("click", function () { cambiarModo($(this).data("modo")); });
+  cambiarModo($modo.val() || "buscar");
+
+  // ---------------- Productos ----------------
   var $tbody = $("#tabla-filas tbody");
 
   function recalcular() {

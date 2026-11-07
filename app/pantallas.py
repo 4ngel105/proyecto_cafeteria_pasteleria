@@ -2,8 +2,9 @@
 en un solo formulario (en vez de ir registro por registro) y el asistente IA."""
 from decimal import Decimal, InvalidOperation
 
-from flask import abort, flash, redirect, request, url_for
+from flask import abort, flash, jsonify, redirect, request, url_for
 from flask_appbuilder import BaseView, expose, has_access
+from sqlalchemy import func, or_
 
 from .extensions import db
 from .ia import IANoConfigurada, consultar_ia, ia_configurada
@@ -119,27 +120,86 @@ class NuevaVentaView(BaseView):
     route_base = "/nueva-venta"
     default_view = "nueva"
 
-    @expose("/", methods=["GET", "POST"])
+    @expose("/buscar-cliente")
     @has_access
-    def nueva(self):
+    def buscar_cliente(self):
+        """Busca clientes por carnet (CI/NIT) o por nombre. Responde en JSON."""
+        q = request.args.get("q", "").strip()
+        if len(q) < 2:
+            return jsonify([])
+        patron = f"%{q}%"
         clientes = (
             db.session.query(Cliente)
             .filter(Cliente.activo.is_(True))
+            .filter(
+                or_(
+                    Cliente.ci_nit.like(f"{q}%"),
+                    Cliente.nombre.like(patron),
+                    Cliente.apellido.like(patron),
+                    func.concat(Cliente.nombre, " ", Cliente.apellido).like(patron),
+                )
+            )
             .order_by(Cliente.nombre, Cliente.apellido)
+            .limit(8)
             .all()
         )
+        return jsonify([_cliente_json(c) for c in clientes])
+
+    @expose("/", methods=["GET", "POST"])
+    @has_access
+    def nueva(self):
         productos = (
             db.session.query(Producto)
             .filter(Producto.activo.is_(True))
             .order_by(Producto.nombre)
             .all()
         )
-        datos = {"cliente_id": "", "metodo_pago": "Efectivo", "filas": []}
+        datos = {
+            "cliente_modo": "buscar",
+            "cliente": None,
+            "nuevo": {},
+            "metodo_pago": "Efectivo",
+            "filas": [],
+        }
 
         if request.method == "POST":
             filas, errores = _leer_filas("producto_id", _a_entero)
-            cliente_id = request.form.get("cliente_id") or None
             metodo_pago = request.form.get("metodo_pago")
+            modo = request.form.get("cliente_modo", "ninguno")
+            nuevo = {
+                campo: request.form.get(f"nuevo_{campo}", "").strip()
+                for campo in ("ci_nit", "nombre", "apellido", "telefono", "email")
+            }
+            cliente = None
+
+            # --- Cliente: uno existente, uno nuevo o venta sin cliente ---
+            if modo == "buscar":
+                cliente_id = _a_entero(request.form.get("cliente_id"))
+                cliente = db.session.get(Cliente, cliente_id) if cliente_id else None
+                if cliente is None or not cliente.activo:
+                    cliente = None
+                    errores.append(
+                        "Busca y elige un cliente, registra uno nuevo "
+                        "o marca \"Sin cliente\"."
+                    )
+            elif modo == "nuevo":
+                if not nuevo["nombre"] or not nuevo["apellido"]:
+                    errores.append("El cliente nuevo necesita nombre y apellido.")
+                if nuevo["ci_nit"]:
+                    existente = (
+                        db.session.query(Cliente)
+                        .filter_by(ci_nit=nuevo["ci_nit"])
+                        .first()
+                    )
+                    if existente:
+                        errores.append(
+                            f"Ya existe un cliente con el CI/NIT {nuevo['ci_nit']}: "
+                            f"{existente}. Búscalo en lugar de registrarlo."
+                        )
+            else:
+                modo = "ninguno"
+
+            # --- Productos y pago ---
             precios = {p.id: p.precio_venta for p in productos}
             if not filas and not errores:
                 errores.append("Agrega al menos un producto.")
@@ -147,22 +207,30 @@ class NuevaVentaView(BaseView):
                 errores.append("Hay un producto que no existe o está inactivo.")
             if metodo_pago not in METODOS_PAGO:
                 errores.append("Elige un método de pago válido.")
-            if cliente_id and int(cliente_id) not in {c.id for c in clientes}:
-                errores.append("El cliente elegido no existe o está inactivo.")
 
             if errores:
                 for e in errores:
                     flash(e, "danger")
                 datos = {
-                    "cliente_id": cliente_id or "",
+                    "cliente_modo": modo,
+                    "cliente": _cliente_json(cliente) if cliente else None,
+                    "nuevo": nuevo,
                     "metodo_pago": metodo_pago,
                     "filas": list(filas.items()),
                 }
             else:
-                venta = Venta(
-                    cliente_id=int(cliente_id) if cliente_id else None,
-                    metodo_pago=metodo_pago,
-                )
+                if modo == "nuevo":
+                    # El cliente se guarda junto con la venta (misma transacción)
+                    cliente = Cliente(
+                        nombre=nuevo["nombre"],
+                        apellido=nuevo["apellido"],
+                        ci_nit=nuevo["ci_nit"] or None,
+                        telefono=nuevo["telefono"] or None,
+                        email=nuevo["email"] or None,
+                        activo=True,
+                    )
+                    db.session.add(cliente)
+                venta = Venta(cliente=cliente, metodo_pago=metodo_pago)
                 for producto_id, cantidad in filas.items():
                     # El precio se congela al momento de la venta
                     venta.detalles.append(
@@ -174,19 +242,27 @@ class NuevaVentaView(BaseView):
                     )
                 db.session.add(venta)
                 db.session.commit()
-                flash(
-                    f"Venta #{venta.id} registrada. Total: Bs {venta.total()}",
-                    "success",
-                )
+                mensaje = f"Venta #{venta.id} registrada. Total: Bs {venta.total()}"
+                if modo == "nuevo":
+                    mensaje = f"Cliente {cliente} registrado. " + mensaje
+                flash(mensaje, "success")
                 return redirect(url_for("VentaView.show", pk=venta.id))
 
         return self.render_template(
             "nueva_venta.html",
-            clientes=clientes,
             productos=productos,
             metodos=METODOS_PAGO,
             datos=datos,
         )
+
+
+def _cliente_json(cliente):
+    return {
+        "id": cliente.id,
+        "nombre": f"{cliente.nombre} {cliente.apellido}",
+        "ci_nit": cliente.ci_nit or "",
+        "telefono": cliente.telefono or "",
+    }
 
 
 INSTRUCCIONES_IA = (

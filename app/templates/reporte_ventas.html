@@ -1,0 +1,111 @@
+{% extends "appbuilder/base.html" %}
+{% import "reporte_macros.html" as r %}
+
+{% block content %}
+{{ r.encabezado("Ventas por período", "fa-calendar", "Cuánto se vendió, por día y por método de pago.", desde, hasta) }}
+
+{% call r.filtros(desde, hasta) %}
+<div class="form-group">
+  <label for="metodo">Método de pago</label>
+  <select id="metodo" name="metodo" class="form-control">
+    <option value="">Todos</option>
+    {% for m in metodos %}
+    <option value="{{ m }}" {% if m == metodo %}selected{% endif %}>{{ m }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endcall %}
+
+<div class="row">
+  <div class="col-sm-4">
+    <div class="indicador">
+      <span class="indicador-etiqueta">Total vendido</span>
+      <span class="indicador-valor">Bs {{ "%.2f" | format(total) }}</span>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="indicador">
+      <span class="indicador-etiqueta">Cantidad de ventas</span>
+      <span class="indicador-valor">{{ cantidad }}</span>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="indicador">
+      <span class="indicador-etiqueta">Ticket promedio</span>
+      <span class="indicador-valor">Bs {{ "%.2f" | format(promedio) }}</span>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-7">
+    <div class="panel panel-default">
+      <div class="panel-heading"><h4 class="panel-title">Ventas por día</h4></div>
+      {% if por_dia %}
+      {% set max_dia = por_dia | map(attribute="total") | max %}
+      <table class="table table-hover">
+        <thead><tr><th>Día</th><th class="text-right">Ventas</th><th>Total (Bs)</th></tr></thead>
+        <tbody>
+          {% for d in por_dia %}
+          <tr>
+            <td>{{ d.dia.strftime("%d/%m/%Y") if d.dia.strftime is defined else d.dia }}</td>
+            <td class="text-right">{{ d.ventas }}</td>
+            <td>
+              <div class="barra" title="{{ d.ventas }} ventas · Bs {{ '%.2f' | format(d.total) }}">
+                <span style="width: {{ (d.total / max_dia * 100) if max_dia else 0 }}%"></span>
+                <em>{{ "%.2f" | format(d.total) }}</em>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}{{ r.sin_datos() }}{% endif %}
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="panel panel-default">
+      <div class="panel-heading"><h4 class="panel-title">Por método de pago</h4></div>
+      {% if por_metodo %}
+      <table class="table">
+        <thead><tr><th>Método</th><th class="text-right">Ventas</th><th class="text-right">Total (Bs)</th><th class="text-right">%</th></tr></thead>
+        <tbody>
+          {% for m in por_metodo %}
+          <tr>
+            <td>{{ m.metodo_pago }}</td>
+            <td class="text-right">{{ m.ventas }}</td>
+            <td class="text-right">{{ "%.2f" | format(m.total) }}</td>
+            <td class="text-right">{{ "%.0f" | format(m.total / total * 100) if total else 0 }} %</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}{{ r.sin_datos() }}{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="panel panel-default">
+  <div class="panel-heading"><h4 class="panel-title">Detalle de ventas ({{ cantidad }})</h4></div>
+  {% if ventas %}
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>CI/NIT</th><th>Pago</th><th class="text-right">Total (Bs)</th></tr></thead>
+      <tbody>
+        {% for v in ventas %}
+        <tr>
+          <td><a href="{{ url_for('VentaView.show', pk=v.id) }}">#{{ v.id }}</a></td>
+          <td>{{ v.fecha.strftime("%d/%m/%Y %H:%M") }}</td>
+          <td>{{ v.cliente or "Sin cliente" }}</td>
+          <td>{{ v.cliente.ci_nit if v.cliente and v.cliente.ci_nit else "—" }}</td>
+          <td>{{ v.metodo_pago }}</td>
+          <td class="text-right">{{ v.total() }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot><tr class="active"><th colspan="5" class="text-right">Total</th><th class="text-right">{{ "%.2f" | format(total) }}</th></tr></tfoot>
+    </table>
+  </div>
+  {% else %}{{ r.sin_datos() }}{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "appbuilder/base.html" %}
+{% import "reporte_macros.html" as r %}
+
+{% block content %}
+{{ r.encabezado("Ganancia por producto", "fa-line-chart", "Ingresos menos el costo de los ingredientes de cada producto vendido.", desde, hasta) }}
+
+{% call r.filtros(desde, hasta) %}
+  {{ r.select_categoria(categorias, categoria_id) }}
+{% endcall %}
+
+<div class="row">
+  <div class="col-sm-3">
+    <div class="indicador">
+      <span class="indicador-etiqueta">Ingresos</span>
+      <span class="indicador-valor">Bs {{ "%.2f" | format(total_ingresos) }}</span>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="indicador">
+      <span class="indicador-etiqueta">Costo de ingredientes</span>
+      <span class="indicador-valor">Bs {{ "%.2f" | format(total_costo) }}</span>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="indicador">
+      <span class="indicador-etiqueta">Ganancia</span>
+      <span class="indicador-valor {% if total_ganancia < 0 %}negativo{% endif %}">Bs {{ "%.2f" | format(total_ganancia) }}</span>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="indicador">
+      <span class="indicador-etiqueta">Margen</span>
+      <span class="indicador-valor {% if margen_total < 0 %}negativo{% endif %}">{{ margen_total }} %</span>
+    </div>
+  </div>
+</div>
+
+<div class="panel panel-default">
+  <div class="panel-heading"><h4 class="panel-title">Detalle por producto</h4></div>
+  {% if filas %}
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Producto</th><th>Categoría</th>
+          <th class="text-right">Unidades</th>
+          <th class="text-right">Costo c/u (Bs)</th>
+          <th class="text-right">Ingresos (Bs)</th>
+          <th class="text-right">Costo (Bs)</th>
+          <th class="text-right">Ganancia (Bs)</th>
+          <th class="text-right">Margen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in filas %}
+        <tr {% if f.ganancia < 0 %}class="danger"{% endif %}>
+          <td>
+            {{ f.nombre }}
+            {% if f.sin_receta %}
+              <span class="label label-warning" title="Sin receta: el costo se toma como 0">
+                <i class="fa fa-exclamation-circle"></i> sin receta
+              </span>
+            {% endif %}
+          </td>
+          <td>{{ f.categoria }}</td>
+          <td class="text-right">{{ f.unidades }}</td>
+          <td class="text-right">{{ f.costo_unitario }}</td>
+          <td class="text-right">{{ "%.2f" | format(f.ingresos) }}</td>
+          <td class="text-right">{{ "%.2f" | format(f.costo) }}</td>
+          <td class="text-right">
+            {% if f.ganancia < 0 %}<i class="fa fa-arrow-down text-danger" title="Pérdida"></i>{% endif %}
+            <strong>{{ "%.2f" | format(f.ganancia) }}</strong>
+          </td>
+          <td class="text-right">{{ f.margen }} %</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="active">
+          <th colspan="4" class="text-right">Total</th>
+          <th class="text-right">{{ "%.2f" | format(total_ingresos) }}</th>
+          <th class="text-right">{{ "%.2f" | format(total_costo) }}</th>
+          <th class="text-right">{{ "%.2f" | format(total_ganancia) }}</th>
+          <th class="text-right">{{ margen_total }} %</th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="panel-footer texto-sec">
+    <i class="fa fa-info-circle"></i> El costo se calcula con la receta actual de cada producto.
+    Los ingresos usan el precio con el que se hizo cada venta.
+  </div>
+  {% else %}{{ r.sin_datos() }}{% endif %}
+</div>
+{% endblock %}
