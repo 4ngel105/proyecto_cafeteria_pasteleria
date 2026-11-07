@@ -1,11 +1,12 @@
-"""Pantallas propias: armar la receta de un producto y registrar una venta
-en un solo formulario (en vez de ir registro por registro)."""
+"""Pantallas propias: armar la receta de un producto, registrar una venta
+en un solo formulario (en vez de ir registro por registro) y el asistente IA."""
 from decimal import Decimal, InvalidOperation
 
 from flask import abort, flash, redirect, request, url_for
 from flask_appbuilder import BaseView, expose, has_access
 
 from .extensions import db
+from .ia import IANoConfigurada, consultar_ia, ia_configurada
 from .models import Cliente, DetalleVenta, Ingrediente, Producto, Receta, Venta
 
 METODOS_PAGO = ["Efectivo", "QR", "Tarjeta"]
@@ -185,4 +186,93 @@ class NuevaVentaView(BaseView):
             productos=productos,
             metodos=METODOS_PAGO,
             datos=datos,
+        )
+
+
+INSTRUCCIONES_IA = (
+    "Eres un asesor de una cafetería-pastelería en Bolivia. Los precios están "
+    "en bolivianos (Bs). Responde en español, de forma breve y práctica. "
+    "Escribe en texto simple: sin Markdown, sin asteriscos, sin tablas; "
+    "para listas usa guiones al inicio de la línea."
+)
+
+
+def _pregunta_precio(producto):
+    """Arma la pregunta para sugerir el precio con los datos del producto."""
+    lineas = [
+        f"Producto: {producto.nombre} (categoría: {producto.categoria}).",
+    ]
+    if producto.descripcion:
+        lineas.append(f"Descripción: {producto.descripcion}.")
+    if producto.receta:
+        lineas.append("Ingredientes de la receta:")
+        for r in producto.receta:
+            lineas.append(
+                f"- {r.ingrediente.nombre}: {r.cantidad} {r.ingrediente.unidad_medida}"
+                f" (costo Bs {r.subtotal()})"
+            )
+    else:
+        lineas.append("Todavía no tiene receta registrada.")
+    lineas += [
+        f"Costo total de ingredientes: Bs {producto.costo()}.",
+        f"Ganancia configurada: {producto.margen_ganancia} %, "
+        f"precio sugerido por fórmula: Bs {producto.precio_sugerido()}.",
+        f"Precio de venta actual: Bs {producto.precio_venta}.",
+        "",
+        "¿En cuánto debería venderlo? Da un precio recomendado en Bs, explica "
+        "en 2 o 3 frases por qué (costos que faltan como vaso, gas o mano de "
+        "obra, y precios habituales en cafeterías) y di si el precio actual "
+        "está bien, bajo o alto.",
+    ]
+    return "\n".join(lineas)
+
+
+class AsistenteIAView(BaseView):
+    route_base = "/asistente"
+    default_view = "asistente"
+
+    @expose("/", methods=["GET", "POST"])
+    @has_access
+    def asistente(self):
+        productos = (
+            db.session.query(Producto)
+            .filter(Producto.activo.is_(True))
+            .order_by(Producto.nombre)
+            .all()
+        )
+        modo = request.form.get("modo") or "precio"
+        producto_id = request.values.get("producto", type=int)
+        texto_libre = request.form.get("pregunta", "").strip()
+        pregunta = respuesta = aviso = None
+
+        if request.method == "POST":
+            if modo == "precio":
+                producto = db.session.get(Producto, producto_id) if producto_id else None
+                if producto is None:
+                    flash("Elige un producto.", "danger")
+                else:
+                    pregunta = _pregunta_precio(producto)
+            elif not texto_libre:
+                flash("Escribe tu pregunta.", "danger")
+            else:
+                pregunta = texto_libre
+
+            if pregunta:
+                try:
+                    respuesta = consultar_ia(INSTRUCCIONES_IA, pregunta)
+                except IANoConfigurada as e:
+                    aviso = str(e)
+                except Exception as e:  # error de red, clave inválida, etc.
+                    flash(f"No se pudo consultar la IA: {e}", "danger")
+
+        return self.render_template(
+            "asistente_ia.html",
+            productos=productos,
+            modo=modo,
+            producto_id=producto_id,
+            texto_libre=texto_libre,
+            pregunta=pregunta,
+            respuesta=respuesta,
+            aviso=aviso,
+            ia_lista=ia_configurada(),
         )

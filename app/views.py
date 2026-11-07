@@ -2,6 +2,7 @@ from flask import current_app, redirect, render_template, url_for
 from flask_appbuilder import ModelView
 from flask_appbuilder.actions import action
 from flask_appbuilder.models.sqla.interface import SQLAInterface
+from markupsafe import Markup
 from wtforms.validators import NumberRange
 
 from .extensions import appbuilder
@@ -14,11 +15,22 @@ from .models import (
     Receta,
     Venta,
 )
-from .pantallas import NuevaVentaView, RecetaFormView
+from .pantallas import AsistenteIAView, NuevaVentaView, RecetaFormView
+
+
+def si_no(valor):
+    """Muestra Sí / No en lugar de True / False."""
+    if valor:
+        return Markup('<span class="label label-success">Sí</span>')
+    return Markup('<span class="label label-default">No</span>')
 
 
 class RecetaView(ModelView):
     datamodel = SQLAInterface(Receta)
+    list_title = "Recetas"
+    show_title = "Detalle de la receta"
+    add_title = "Nueva receta"
+    edit_title = "Editar receta"
     # Solo lectura: la receta se arma desde la pantalla "Recetas y costos"
     base_permissions = ["can_list", "can_show"]
 
@@ -39,6 +51,11 @@ class RecetaView(ModelView):
 
 class IngredienteView(ModelView):
     datamodel = SQLAInterface(Ingrediente)
+    list_title = "Ingredientes"
+    show_title = "Detalle del ingrediente"
+    add_title = "Nuevo ingrediente"
+    edit_title = "Editar ingrediente"
+    formatters_columns = {"activo": si_no}
     # Muestra en qué productos se usa el ingrediente
     related_views = [RecetaView]
 
@@ -87,6 +104,11 @@ class IngredienteView(ModelView):
 
 class ProductoView(ModelView):
     datamodel = SQLAInterface(Producto)
+    list_title = "Productos"
+    show_title = "Detalle del producto"
+    add_title = "Nuevo producto"
+    edit_title = "Editar producto"
+    formatters_columns = {"activo": si_no}
     # En el detalle del producto se ve y se arma su receta
     related_views = [RecetaView]
 
@@ -151,6 +173,11 @@ class ProductoView(ModelView):
 
 class CategoriaView(ModelView):
     datamodel = SQLAInterface(Categoria)
+    list_title = "Categorías"
+    show_title = "Detalle de la categoría"
+    add_title = "Nueva categoría"
+    edit_title = "Editar categoría"
+    formatters_columns = {"activo": si_no}
     # Muestra los productos de la categoría al ver su detalle
     related_views = [ProductoView]
 
@@ -171,6 +198,10 @@ class CategoriaView(ModelView):
 
 class DetalleVentaView(ModelView):
     datamodel = SQLAInterface(DetalleVenta)
+    list_title = "Productos vendidos"
+    show_title = "Detalle del producto vendido"
+    add_title = "Agregar producto"
+    edit_title = "Editar producto vendido"
     # Los productos de una venta se cargan desde "Nueva venta"; aquí solo se
     # consultan, y se puede corregir una línea (por ejemplo, un descuento)
     base_permissions = ["can_list", "can_show", "can_edit", "can_delete"]
@@ -202,6 +233,10 @@ class DetalleVentaView(ModelView):
 
 class VentaView(ModelView):
     datamodel = SQLAInterface(Venta)
+    list_title = "Historial de ventas"
+    show_title = "Detalle de la venta"
+    add_title = "Nueva venta"
+    edit_title = "Editar venta"
     # Las ventas nuevas se registran desde "Nueva venta"
     base_permissions = ["can_list", "can_show", "can_edit", "can_delete"]
     # En el detalle de la venta se ven sus productos
@@ -228,6 +263,11 @@ class VentaView(ModelView):
 
 class ClienteView(ModelView):
     datamodel = SQLAInterface(Cliente)
+    list_title = "Clientes"
+    show_title = "Detalle del cliente"
+    add_title = "Nuevo cliente"
+    edit_title = "Editar cliente"
+    formatters_columns = {"activo": si_no}
     # En el detalle del cliente se ven sus compras
     related_views = [VentaView]
 
@@ -301,6 +341,13 @@ appbuilder.add_view(
     "Recetas y costos",
     icon="fa-list-alt",
     category="Inventario",
+)
+appbuilder.add_view(
+    AsistenteIAView,
+    "Asistente IA",
+    icon="fa-magic",
+    category="Asistente IA",
+    category_icon="fa-magic",
 )
 # Sin menú: solo se ven dentro del detalle de producto / venta
 appbuilder.add_view_no_menu(RecetaView)

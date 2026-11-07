@@ -1,0 +1,71 @@
+{# Plantilla base de toda la app: agrega el tema de la cafetería y el loader #}
+{% extends "appbuilder/baselayout.html" %}
+{% import 'appbuilder/baselib.html' as baselib with context %}
+
+{% block head_css %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/loader.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cafeteria.css') }}">
+{% endblock %}
+
+{% block tail_js %}
+{{ super() }}
+<div class="loader-overlay" id="loaderGlobal">
+  <div class="loader">
+    <div class="smoke one"></div>
+    <div class="smoke two"></div>
+    <div class="smoke three"></div>
+    <div class="cup"><div class="cup-handle"></div></div>
+    <div class="load" id="loaderTexto">Cargando...</div>
+  </div>
+</div>
+<script nonce="{{ baselib.get_nonce() }}">
+  (function () {
+    var loader = document.getElementById("loaderGlobal");
+    var texto = document.getElementById("loaderTexto");
+    var espera = null;
+    // El login ya tiene su propio loader
+    if (document.getElementById("loginLoader")) { return; }
+
+    // Se muestra solo si la página tarda más de 150 ms (evita parpadeos)
+    function mostrar(mensaje) {
+      texto.textContent = mensaje;
+      clearTimeout(espera);
+      espera = setTimeout(function () { loader.classList.add("active"); }, 150);
+    }
+
+    // Al guardar un formulario
+    document.addEventListener("submit", function (e) {
+      if (e.defaultPrevented) { return; }
+      var metodo = (e.target.getAttribute("method") || "get").toLowerCase();
+      // Un formulario puede elegir su texto con data-loader="..."
+      mostrar(e.target.getAttribute("data-loader") ||
+              (metodo === "post" ? "Guardando..." : "Cargando..."));
+    });
+
+    // Al ir a otra página de la app con un enlace
+    document.addEventListener("click", function (e) {
+      if (e.defaultPrevented || e.button !== 0 ||
+          e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) { return; }
+      var a = e.target.closest("a[href]");
+      if (!a) { return; }
+      var href = a.getAttribute("href");
+      if (!href || href.charAt(0) === "#" || href.indexOf("javascript:") === 0 ||
+          a.target === "_blank" || a.hasAttribute("download") ||
+          a.getAttribute("data-toggle")) { return; }
+      var url = new URL(a.href, window.location.href);
+      if (url.origin !== window.location.origin) { return; }
+      // Mismo enlace con solo un #ancla: no cambia de página
+      if (url.pathname === window.location.pathname &&
+          url.search === window.location.search && url.hash) { return; }
+      mostrar("Cargando...");
+    });
+
+    // Al volver con el botón "atrás" el loader no debe quedar visible
+    window.addEventListener("pageshow", function () {
+      clearTimeout(espera);
+      loader.classList.remove("active");
+    });
+  })();
+</script>
+{% endblock %}

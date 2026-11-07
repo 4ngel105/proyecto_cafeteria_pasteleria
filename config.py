@@ -21,6 +21,11 @@ SQLALCHEMY_DATABASE_URI = os.getenv(
 )
 # SQLALCHEMY_DATABASE_URI = 'postgresql://root:password@localhost/myapp'
 
+# Inteligencia artificial (se lee del archivo .env; ver app/ia.py)
+IA_API_KEY = os.getenv("IA_API_KEY", "")
+IA_MODELO = os.getenv("IA_MODELO", "")
+IA_API_URL = os.getenv("IA_API_URL", "")
+
 # Flask-WTF flag for CSRF
 CSRF_ENABLED = True
 
@@ -28,7 +33,11 @@ CSRF_ENABLED = True
 # GLOBALS FOR APP Builder
 # ------------------------------
 # Uncomment to setup Your App name
-APP_NAME = "Cafeteria"
+APP_NAME = "Cafetería"
+
+# Plantilla base con el tema de la cafetería y página de inicio con resumen
+FAB_BASE_TEMPLATE = "mi_base.html"
+FAB_INDEX_VIEW = "app.inicio.InicioView"
 
 # Uncomment to setup Setup an App icon
 # APP_ICON = "static/img/logo.jpg"
