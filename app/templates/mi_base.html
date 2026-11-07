@@ -38,7 +38,9 @@
     document.addEventListener("submit", function (e) {
       if (e.defaultPrevented) { return; }
       var metodo = (e.target.getAttribute("method") || "get").toLowerCase();
-      mostrar(metodo === "post" ? "Guardando..." : "Cargando...");
+      // Un formulario puede elegir su texto con data-loader="..."
+      mostrar(e.target.getAttribute("data-loader") ||
+              (metodo === "post" ? "Guardando..." : "Cargando..."));
     });
 
     // Al ir a otra página de la app con un enlace

@@ -1,0 +1,122 @@
+{% extends "appbuilder/base.html" %}
+
+{% block content %}
+{% set meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+                "agosto", "septiembre", "octubre", "noviembre", "diciembre"] %}
+<div class="inicio">
+  <div class="inicio-encabezado">
+    <div>
+      <h2>Hola, {{ g.user.first_name or g.user.username }} <i class="fa fa-coffee"></i></h2>
+      <p class="texto-sec">{{ hoy.day }} de {{ meses[hoy.month - 1] }} de {{ hoy.year }}</p>
+    </div>
+    <a class="btn btn-primary btn-lg" href="{{ url_for('NuevaVentaView.nueva') }}">
+      <i class="fa fa-cart-plus"></i> Nueva venta
+    </a>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6 col-md-3">
+      <div class="indicador">
+        <span class="indicador-etiqueta">Vendido hoy</span>
+        <span class="indicador-valor">Bs {{ "%.2f" | format(total_hoy) }}</span>
+        <span class="indicador-nota">{{ ventas_hoy }} venta{{ "s" if ventas_hoy != 1 }}</span>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="indicador">
+        <span class="indicador-etiqueta">Vendido en {{ meses[hoy.month - 1] }}</span>
+        <span class="indicador-valor">Bs {{ "%.2f" | format(total_mes) }}</span>
+        <span class="indicador-nota">{{ ventas_mes }} venta{{ "s" if ventas_mes != 1 }}</span>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="indicador">
+        <span class="indicador-etiqueta">Productos activos</span>
+        <span class="indicador-valor">{{ productos_activos }}</span>
+        <span class="indicador-nota">{{ sin_receta | length }} sin receta</span>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="indicador">
+        <span class="indicador-etiqueta">Clientes registrados</span>
+        <span class="indicador-valor">{{ clientes }}</span>
+        <span class="indicador-nota"><a href="{{ url_for('ClienteView.add') }}">+ Nuevo cliente</a></span>
+      </div>
+    </div>
+  </div>
+
+  {% if bajo_costo %}
+  <div class="alert alert-danger aviso">
+    <i class="fa fa-exclamation-triangle"></i>
+    <strong>Se venden por debajo del costo:</strong>
+    {% for p in bajo_costo %}
+      <a href="{{ url_for('RecetaFormView.editar', pk=p.id) }}">{{ p.nombre }}</a>
+      (costo Bs {{ p.costo() }}, precio Bs {{ p.precio_venta }}){{ "," if not loop.last }}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title"><i class="fa fa-clock-o"></i> Últimas ventas</h4>
+        </div>
+        {% if ultimas_ventas %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>N°</th><th>Fecha</th><th>Cliente</th><th>Pago</th>
+                <th class="text-right">Total (Bs)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for v in ultimas_ventas %}
+              <tr>
+                <td><a href="{{ url_for('VentaView.show', pk=v.id) }}">#{{ v.id }}</a></td>
+                <td>{{ v.fecha.strftime("%d/%m/%Y %H:%M") }}</td>
+                <td>{{ v.cliente or "Sin cliente" }}</td>
+                <td>{{ v.metodo_pago }}</td>
+                <td class="text-right">{{ v.total() }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="panel-body texto-sec">Todavía no hay ventas registradas.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title"><i class="fa fa-bolt"></i> Accesos rápidos</h4>
+        </div>
+        <div class="list-group accesos">
+          <a class="list-group-item" href="{{ url_for('NuevaVentaView.nueva') }}">
+            <i class="fa fa-cart-plus fa-fw"></i> Registrar una venta
+          </a>
+          <a class="list-group-item" href="{{ url_for('RecetaFormView.lista') }}">
+            <i class="fa fa-list-alt fa-fw"></i> Recetas y costos
+          </a>
+          <a class="list-group-item" href="{{ url_for('ProductoView.add') }}">
+            <i class="fa fa-coffee fa-fw"></i> Nuevo producto
+          </a>
+          <a class="list-group-item" href="{{ url_for('IngredienteView.add') }}">
+            <i class="fa fa-cubes fa-fw"></i> Nuevo ingrediente
+          </a>
+          <a class="list-group-item" href="{{ url_for('AsistenteIAView.asistente') }}">
+            <i class="fa fa-magic fa-fw"></i> Asistente IA
+          </a>
+          <a class="list-group-item" href="{{ url_for('VentaView.list') }}">
+            <i class="fa fa-money fa-fw"></i> Historial de ventas
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

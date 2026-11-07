@@ -1,0 +1,262 @@
+/* Tema "cafetería" para toda la aplicación (sobre Bootstrap 3 de Flask-AppBuilder) */
+:root {
+  --cafe-oscuro: #3e2a1c;
+  --cafe: #6f4e37;
+  --cafe-hover: #5a3e2b;
+  --cafe-claro: #c8a27c;
+  --crema: #f7f1e8;
+  --crema-oscuro: #efe5d6;
+  --superficie: #ffffff;
+  --texto: #2b2118;
+  --texto-sec: #6b5b4e;
+  --borde: #e6dccf;
+  --exito: #3f7a3a;
+  --exito-hover: #33652f;
+  --radio: 10px;
+  --sombra: 0 4px 12px rgba(62, 42, 28, 0.08);
+}
+
+body {
+  background-color: var(--crema);
+  color: var(--texto);
+}
+
+a { color: var(--cafe); }
+a:hover, a:focus { color: var(--cafe-hover); }
+
+.texto-sec { color: var(--texto-sec); }
+
+/* ---------- Barra superior ---------- */
+.navbar-inverse {
+  background-color: var(--cafe-oscuro);
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.navbar-inverse .navbar-brand,
+.navbar-inverse .navbar-brand a {
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.navbar-inverse .navbar-brand a::before {
+  content: "\2615  "; /* taza de café */
+}
+.navbar-inverse .navbar-nav > li > a { color: #ecdcc8; }
+.navbar-inverse .navbar-nav > li > a:hover,
+.navbar-inverse .navbar-nav > .open > a,
+.navbar-inverse .navbar-nav > .open > a:hover,
+.navbar-inverse .navbar-nav > .open > a:focus,
+.navbar-inverse .navbar-nav > .active > a {
+  background-color: var(--cafe);
+  color: #fff;
+}
+.dropdown-menu {
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  box-shadow: var(--sombra);
+}
+.dropdown-menu > li > a { padding: 7px 18px; }
+.dropdown-menu > li > a:hover,
+.dropdown-menu > li > a:focus {
+  background-color: var(--crema);
+  color: var(--cafe-oscuro);
+}
+
+/* ---------- Paneles, tablas y tarjetas ---------- */
+.panel {
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+.panel-default > .panel-heading {
+  background-color: var(--superficie);
+  border-bottom: 1px solid var(--borde);
+  color: var(--cafe-oscuro);
+  padding: 14px 18px;
+}
+.panel-title { font-weight: 600; }
+
+.table > thead > tr > th {
+  background-color: var(--crema-oscuro);
+  color: var(--cafe-oscuro);
+  border-bottom: 2px solid var(--borde);
+  font-weight: 600;
+}
+.table > tbody > tr > td { vertical-align: middle; }
+.table-hover > tbody > tr:hover { background-color: #fbf7f1; }
+.table-bordered,
+.table-bordered > thead > tr > th,
+.table-bordered > tbody > tr > td,
+.table-bordered > tfoot > tr > td,
+.table-bordered > tfoot > tr > th {
+  border-color: var(--borde);
+}
+
+.well {
+  background-color: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: none;
+}
+
+/* ---------- Botones y formularios ---------- */
+.btn { border-radius: 8px; }
+.btn-primary {
+  background-color: var(--cafe);
+  border-color: var(--cafe);
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active,
+.btn-primary.active, .open > .dropdown-toggle.btn-primary {
+  background-color: var(--cafe-hover);
+  border-color: var(--cafe-hover);
+}
+.btn-success {
+  background-color: var(--exito);
+  border-color: var(--exito);
+}
+.btn-success:hover, .btn-success:focus, .btn-success:active {
+  background-color: var(--exito-hover);
+  border-color: var(--exito-hover);
+}
+.btn-default {
+  border-color: var(--borde);
+  color: var(--cafe-oscuro);
+}
+.btn-default:hover { background-color: var(--crema); }
+
+.form-control {
+  border-color: var(--borde);
+  border-radius: 8px;
+  box-shadow: none;
+}
+.form-control:focus {
+  border-color: var(--cafe-claro);
+  box-shadow: 0 0 0 3px rgba(200, 162, 124, 0.25);
+}
+.input-group .form-control:not(:last-child) { border-radius: 8px 0 0 8px; }
+.input-group-addon {
+  background-color: var(--crema-oscuro);
+  border-color: var(--borde);
+  color: var(--texto-sec);
+}
+.input-group-btn:last-child > .btn { border-radius: 0 8px 8px 0; }
+
+.pagination > .active > a,
+.pagination > .active > a:hover {
+  background-color: var(--cafe);
+  border-color: var(--cafe);
+}
+.pagination > li > a { color: var(--cafe); }
+
+.alert { border-radius: var(--radio); }
+
+/* ---------- Página de inicio ---------- */
+.inicio-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0 20px;
+}
+.inicio-encabezado h2 {
+  margin: 0;
+  color: var(--cafe-oscuro);
+  font-weight: 600;
+}
+.inicio-encabezado p { margin: 4px 0 0; }
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--cafe-claro);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.indicador-etiqueta {
+  color: var(--texto-sec);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.indicador-valor {
+  color: var(--texto);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.indicador-nota {
+  color: var(--texto-sec);
+  font-size: 13px;
+}
+
+.aviso a { font-weight: 600; text-decoration: underline; }
+
+.accesos .list-group-item {
+  border-left: 0;
+  border-right: 0;
+  color: var(--cafe-oscuro);
+}
+.accesos .list-group-item:first-child { border-top: 0; }
+.accesos .list-group-item:hover { background-color: var(--crema); }
+.accesos .fa { color: var(--cafe); margin-right: 6px; }
+
+/* Números alineados en tablas de montos */
+.text-right { font-variant-numeric: tabular-nums; }
+
+/* Título de las listas de Flask-AppBuilder (por defecto azul) */
+.panel-primary { border-color: var(--borde); }
+.panel-primary > .panel-heading {
+  background-color: var(--cafe);
+  border-color: var(--cafe);
+  color: #fff;
+}
+.label-success { background-color: var(--exito); }
+.label { font-size: 85%; font-weight: 600; }
+
+/* ---------- Asistente IA ---------- */
+.estado-ia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.estado-ok { background: #e3efe0; color: var(--exito-hover); }
+.estado-pendiente { background: #fbecd3; color: #7a4f12; }
+
+.tarjeta-ia { transition: border-color 0.2s; }
+.tarjeta-ia .panel-body { display: flex; flex-direction: column; gap: 10px; }
+.tarjeta-ia .panel-body > .btn { align-self: flex-start; }
+.tarjeta-activa { border-color: var(--cafe-claro); }
+
+.ejemplos { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ejemplos .btn { white-space: normal; text-align: left; }
+
+.respuesta-ia { border-left: 4px solid var(--cafe-claro); }
+.respuesta-texto {
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--texto);
+}
+.enviado { margin-top: 16px; }
+.enviado summary { cursor: pointer; color: var(--texto-sec); }
+.enviado pre {
+  margin-top: 8px;
+  background: var(--crema);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  font-size: 13px;
+}

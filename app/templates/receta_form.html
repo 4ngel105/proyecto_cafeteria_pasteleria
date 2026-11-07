@@ -78,6 +78,9 @@
       <button type="submit" class="btn btn-primary">
         <i class="fa fa-save"></i> Guardar receta
       </button>
+      <a href="{{ url_for('AsistenteIAView.asistente', producto=producto.id) }}" class="btn btn-default pull-right">
+        <i class="fa fa-magic"></i> Pedir precio a la IA
+      </a>
     </form>
 
     <table class="hidden">

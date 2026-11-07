@@ -10,7 +10,7 @@
 <div class="login-page">
     <form class="form" action="" method="post" name="login">
         {{ form.hidden_tag() }}
-        <p class="form-title">{{ title }}</p>
+        <p class="form-title">Iniciar sesión</p>
 
         <div class="input-container">
             {{ form.username(placeholder=_("Username"), autofocus=true) }}
@@ -28,7 +28,7 @@
         <div class="field-error">{{ error }}</div>
         {% endfor %}
 
-        <input class="submit" type="submit" value="{{ _('Sign In') }}">
+        <input class="submit" type="submit" value="Ingresar">
 
         {% if appbuilder.sm.auth_user_registration %}
         <p class="signup-link">
