@@ -1,0 +1,130 @@
+{% extends "appbuilder/base.html" %}
+{% import 'appbuilder/baselib.html' as baselib with context %}
+
+{% block content %}
+<div class="asistente">
+  <div class="inicio-encabezado">
+    <div>
+      <h2><i class="fa fa-magic"></i> Asistente IA</h2>
+      <p class="texto-sec">Pide una sugerencia de precio o pregunta lo que necesites sobre tu cafetería.</p>
+    </div>
+    {% if ia_lista %}
+      <span class="estado-ia estado-ok"><i class="fa fa-check-circle"></i> IA conectada</span>
+    {% else %}
+      <span class="estado-ia estado-pendiente"><i class="fa fa-plug"></i> IA sin conectar</span>
+    {% endif %}
+  </div>
+
+  {% if not ia_lista %}
+  <div class="alert alert-warning">
+    <i class="fa fa-info-circle"></i>
+    <strong>Falta conectar la API.</strong>
+    Agrega <code>IA_API_KEY</code> en el archivo <code>.env</code> y completa la función
+    <code>consultar_ia()</code> en <code>app/ia.py</code>. La pantalla ya funciona:
+    puedes probarla y ver qué datos se enviarían a la IA.
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <!-- Sugerencia de precio -->
+    <div class="col-md-6">
+      <form method="post" class="panel panel-default tarjeta-ia {% if modo == 'precio' %}tarjeta-activa{% endif %}"
+            data-loader="Consultando a la IA...">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="modo" value="precio">
+        <div class="panel-heading">
+          <h4 class="panel-title"><i class="fa fa-tag"></i> ¿En cuánto vendo este producto?</h4>
+        </div>
+        <div class="panel-body">
+          <p class="texto-sec">
+            La IA recibe la receta, el costo de cada ingrediente, tu ganancia y el
+            precio actual, y te recomienda un precio de venta.
+          </p>
+          {% if productos %}
+          <div class="form-group">
+            <label for="producto">Producto</label>
+            <select name="producto" id="producto" class="form-control" required>
+              <option value="">-- elige un producto --</option>
+              {% for p in productos %}
+              <option value="{{ p.id }}" {% if p.id == producto_id %}selected{% endif %}>
+                {{ p.nombre }} — costo Bs {{ p.costo() }}, precio Bs {{ p.precio_venta }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa fa-magic"></i> Sugerir precio
+          </button>
+          {% else %}
+          <div class="alert alert-info">
+            Todavía no hay productos. <a href="{{ url_for('ProductoView.add') }}">Crea uno</a>.
+          </div>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+
+    <!-- Pregunta libre -->
+    <div class="col-md-6">
+      <form method="post" class="panel panel-default tarjeta-ia {% if modo == 'pregunta' %}tarjeta-activa{% endif %}"
+            data-loader="Consultando a la IA...">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="modo" value="pregunta">
+        <div class="panel-heading">
+          <h4 class="panel-title"><i class="fa fa-comments"></i> Pregunta libre</h4>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label for="pregunta">Tu pregunta</label>
+            <textarea name="pregunta" id="pregunta" rows="3" class="form-control" maxlength="1000"
+                      placeholder="Ej: ¿Qué postre puedo ofrecer con el capuchino?" required>{{ texto_libre }}</textarea>
+          </div>
+          <div class="ejemplos">
+            <span class="texto-sec">Ideas:</span>
+            <button type="button" class="btn btn-xs btn-default ejemplo">¿Qué combos puedo armar con café y pasteles?</button>
+            <button type="button" class="btn btn-xs btn-default ejemplo">¿Cómo reduzco el costo de mis bebidas?</button>
+            <button type="button" class="btn btn-xs btn-default ejemplo">Dame una idea de promoción para la tarde</button>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa fa-paper-plane"></i> Preguntar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if pregunta %}
+  <div class="panel panel-default respuesta-ia">
+    <div class="panel-heading">
+      <h4 class="panel-title"><i class="fa fa-lightbulb-o"></i> Respuesta de la IA</h4>
+    </div>
+    <div class="panel-body">
+      {% if respuesta %}
+        <div class="respuesta-texto">{{ respuesta }}</div>
+      {% elif aviso %}
+        <div class="alert alert-warning" style="margin-bottom:0">
+          <i class="fa fa-plug"></i> {{ aviso }}
+        </div>
+      {% endif %}
+
+      <details class="enviado">
+        <summary>Ver lo que se envió a la IA</summary>
+        <pre>{{ pregunta }}</pre>
+      </details>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block tail_js %}
+{{ super() }}
+<script nonce="{{ baselib.get_nonce() }}">
+$(function () {
+  // Los botones de ideas completan la pregunta
+  $(".ejemplo").on("click", function () {
+    $("#pregunta").val($(this).text()).focus();
+  });
+});
+</script>
+{% endblock %}
