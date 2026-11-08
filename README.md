@@ -1,6 +1,6 @@
 # Proyecto Cafetería - Pastelería
 
-**Autor:** Roberto Ángel
+**Autor:** Ayala Lecoña Roberto Angel
 
 Aplicación web con Flask-AppBuilder y MySQL para gestionar una cafetería: productos, recetas con costos, clientes, ventas, reportes y un asistente con inteligencia artificial.
 
